@@ -59,6 +59,7 @@ A comprehensive full-stack web application that empowers users to reimagine thei
 2. **Backend Setup**
    Install Python dependencies:
    ```bash
+   cd backend
    pip install -r requirements.txt
    ```
 
@@ -72,9 +73,10 @@ A comprehensive full-stack web application that empowers users to reimagine thei
 
 5. **Start the application**
    ```bash
+   cd backend
    python app.py
    ```
-   *(Alternatively, run `run.bat` on Windows)*
+   *(Alternatively, run `run.bat` from the project root on Windows)*
 
 6. **Access the application**
    Navigate to `http://localhost:5000` in your web browser.
@@ -83,15 +85,22 @@ A comprehensive full-stack web application that empowers users to reimagine thei
 
 ```text
 GenAI-Home-Styling-Studio/
-├── app.py                   # Main Flask application & routing
-├── config.py                # Configuration and Environment settings
-├── models.py                # SQLAlchemy Database models
-├── ai_engine.py             # Core logic for GenAI, Voice, and Image Validation
-├── requirements.txt         # Python dependencies
+├── backend/                 # Backend Flask Logic
+│   ├── app.py               # Main Flask application & routing
+│   ├── config.py            # Configuration and Environment settings
+│   ├── models.py            # SQLAlchemy Database models
+│   ├── ai_engine.py         # Core logic for GenAI, Voice, and Image Validation
+│   ├── requirements.txt     # Python dependencies
+│   ├── seed.py              # Database seeder
+│   └── wsgi.py              # WSGI Entry point
+├── frontend/                # Frontend Assets
+│   ├── static/              # CSS, JS, and image assets
+│   └── templates/           # Jinja2 HTML templates
+├── Procfile                 # Deployment configurations
+├── render.yaml              # Render deployment configurations
 ├── run.bat                  # Windows startup script
-├── static/                  # CSS, JS, and image assets
-├── templates/               # Jinja2 HTML templates
-└── uploads/                 # Directory for user-uploaded room images
+├── setup.bat                # Windows setup script
+└── README.md                # Project documentation
 ```
 
 ## 🔧 Configuration
