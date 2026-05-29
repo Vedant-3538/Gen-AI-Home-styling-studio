@@ -9,7 +9,9 @@ from config import Config
 from models import db, User, Design, Furniture, Booking
 from ai_engine import analyze_room, buddy_chat, validate_room_image, ROOM_TYPES, BUDGET_RANGES
 
-app = Flask(__name__)
+app = Flask(__name__,
+            template_folder='../frontend/templates',
+            static_folder='../frontend/static')
 app.config.from_object(Config)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 

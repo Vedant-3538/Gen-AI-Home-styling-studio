@@ -1,6 +1,9 @@
 @echo off
 echo ============================================
-echo   Gruha Alankara - Starting Server
+echo   Gruha Alankara - Starting Server...
+cd backend
+python app.py
+pause
 echo ============================================
 echo   Open: http://localhost:5000
 echo   Demo: demo@gruha.com / demo123

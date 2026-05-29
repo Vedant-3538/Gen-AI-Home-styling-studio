@@ -1,12 +1,13 @@
 @echo off
 echo ============================================
-echo   Gruha Alankara - Setup
+echo   Gruha Alankara - Environment Setup
 echo ============================================
-echo.
-echo Installing Python dependencies...
-pip install -r requirements.txt
+python -m venv venv
+call venv\Scripts\activate
+pip install -r backend\requirements.txt
 echo.
 echo Seeding database...
+cd backend
 python seed.py
 echo.
 echo ============================================
