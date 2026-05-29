@@ -1,5 +1,7 @@
 🛋️ GenAI Home Styling Studio
 
+🚀 **Live Demo:** [https://gruha-alankara-75x3.onrender.com](https://gruha-alankara-75x3.onrender.com)
+
 A comprehensive full-stack web application that empowers users to reimagine their home interiors. By uploading a photo of a room, users receive personalized, budget-constrained interior design recommendations powered by Generative AI. The platform also features a multilingual AI voice assistant, augmented reality (AR) furniture visualization, and an integrated booking system for conversational commerce.
 
 ## 🌟 Features
