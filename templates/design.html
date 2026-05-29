@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block title %}Design Studio – Gruha Alankara{% endblock %}
+{% block page_title %}Design Studio{% endblock %}
+{% block content %}
+<div class="studio-page" id="studio-page">
+
+  <!-- ═══════════ LEFT: Input Panel ═══════════ -->
+  <div class="studio-input">
+
+    <!-- Step 1: Upload -->
+    <div class="studio-card" id="card-upload">
+      <div class="studio-card-header">
+        <span class="studio-step-badge">1</span>
+        <h3>Upload Room Photo</h3>
+      </div>
+      <div class="studio-upload-zone" id="upload-zone" onclick="document.getElementById('room-input').click()">
+        <div class="upload-icon-large">📸</div>
+        <p class="upload-title">Click or drag your room photo here</p>
+        <p class="upload-hint">JPG, PNG, WEBP — up to 16 MB</p>
+        <input type="file" id="room-input" accept="image/*" hidden onchange="previewImage(this)"/>
+      </div>
+      <div id="image-preview" class="studio-preview hidden">
+        <img id="preview-img" src="" alt="Room preview"/>
+        <div class="preview-overlay">
+          <button class="btn-remove" onclick="clearImage()">✕ Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Room Type -->
+    <div class="studio-card" id="card-room-type">
+      <div class="studio-card-header">
+        <span class="studio-step-badge">2</span>
+        <h3>Room Type</h3>
+      </div>
+      <div class="room-type-grid">
+        {% set room_icons = {
+          'Living Room': '🛋️', 'Bedroom': '🛏️', 'Kitchen': '🍳',
+          'Bathroom': '🚿', 'Office': '💼', 'Dining Room': '🍽️'
+        } %}
+        {% for rt in room_types %}
+        <button class="room-type-btn{% if loop.first %} active{% endif %}" data-room="{{ rt }}" onclick="selectRoomType(this)">
+          <span class="rt-icon">{{ room_icons.get(rt, '🏠') }}</span>
+          <span class="rt-label">{{ rt }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      <input type="hidden" id="selected-room-type" value="{{ room_types[0] }}"/>
+    </div>
+
+    <!-- Step 3: Style -->
+    <div class="studio-card" id="card-style">
+      <div class="studio-card-header">
+        <span class="studio-step-badge">3</span>
+        <h3>Design Style</h3>
+      </div>
+      <div class="style-select-grid">
+        {% set style_icons = {
+          'Modern':'🏙️', 'Classic':'🏛️', 'Minimal':'⬜',
+          'Bohemian':'🌿', 'Industrial':'🔧', 'Scandinavian':'❄️'
+        } %}
+        {% for s in styles %}
+        <button class="style-select-btn{% if loop.first %} active{% endif %}" data-style="{{ s }}" onclick="selectStyle(this)">
+          <span class="ss-icon">{{ style_icons.get(s, '🎨') }}</span>
+          <span class="ss-label">{{ s }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      <input type="hidden" id="selected-style" value="Modern"/>
+    </div>
+
+    <!-- Step 4: Budget -->
+    <div class="studio-card" id="card-budget">
+      <div class="studio-card-header">
+        <span class="studio-step-badge">4</span>
+        <h3>Budget Range</h3>
+      </div>
+      <div class="budget-grid">
+        {% for b in budget_options %}
+        <button class="budget-btn{% if b.key == '1l-2l' %} active{% endif %}" data-budget="{{ b.key }}" onclick="selectBudget(this)">
+          <span class="budget-label">{{ b.label }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      <input type="hidden" id="selected-budget" value="1l-2l"/>
+    </div>
+
+    <!-- Analyze Button -->
+    <button class="btn-studio-analyze" id="analyze-btn" onclick="analyzeRoom()">
+      <span class="btn-analyze-icon">🧠</span>
+      <span class="btn-analyze-text">Analyze with AI</span>
+    </button>
+  </div>
+
+  <!-- ═══════════ RIGHT: Results Panel ═══════════ -->
+  <div class="studio-results" id="results-panel">
+
+    <!-- Placeholder State -->
+    <div class="studio-placeholder" id="results-placeholder">
+      <div class="placeholder-visual">
+        <div class="ph-circle"></div>
+        <div class="ph-icon">🧠</div>
+      </div>
+      <h3>AI Suggestions Will Appear Here</h3>
+      <p>Upload a room photo, select your preferences, and click <strong>Analyze with AI</strong></p>
+    </div>
+
+    <!-- Loading State -->
+    <div class="studio-loading hidden" id="results-loading">
+      <div class="loading-spinner"></div>
+      <h3>Analyzing Your Room…</h3>
+      <p>Our AI is examining your room, matching furniture to your budget and style.</p>
+      <div class="loading-steps">
+        <div class="ls-item active" id="ls-validate">✓ Validating room image</div>
+        <div class="ls-item" id="ls-analyze">⏳ Analyzing room layout</div>
+        <div class="ls-item" id="ls-furniture">⏳ Matching furniture to budget</div>
+      </div>
+    </div>
+
+    <!-- Error State (non-room image) -->
+    <div class="studio-error hidden" id="results-error">
+      <div class="error-icon">⚠️</div>
+      <h3 id="error-title">Not a Room Image</h3>
+      <p id="error-message">Please upload a proper photo of a room interior (living room, bedroom, kitchen, etc.)</p>
+      <button class="btn-retry" onclick="resetToUpload()">📸 Upload Again</button>
+    </div>
+
+    <!-- AI Results -->
+    <div class="studio-ai-results hidden" id="ai-results">
+
+      <!-- Generated Room Visualization (Removed) -->
+
+      <!-- Room Info Header -->
+      <div class="result-info-bar">
+        <div class="info-left">
+          <h2 id="res-room-type">Living Room</h2>
+          <div class="info-tags">
+            <span class="tag-style" id="res-style-tag">Modern</span>
+            <span class="tag-budget" id="res-budget-tag">₹1L – ₹2L</span>
+          </div>
+        </div>
+        <div class="info-right">
+          <div class="budget-display">
+            <span class="budget-label-sm">Estimated Total</span>
+            <span class="budget-value" id="res-total-budget">₹0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Furniture Suggestions -->
+      <div class="result-block">
+        <div class="result-block-header">
+          <h3>🛋️ Suggested Furniture</h3>
+          <span class="item-count" id="furniture-count">0 items</span>
+        </div>
+        <div class="furniture-cards" id="furniture-list"></div>
+      </div>
+
+      <!-- Colour Palette -->
+      <div class="result-block">
+        <div class="result-block-header">
+          <h3>🎨 Colour Palette</h3>
+        </div>
+        <div class="palette-row" id="color-palette"></div>
+      </div>
+
+      <!-- Design Tips -->
+      <div class="result-block">
+        <div class="result-block-header">
+          <h3>💡 Design Tips</h3>
+        </div>
+        <div class="tips-grid" id="tips-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStyle = 'Modern';
+let currentRoomType = '{{ room_types[0] }}';
+let currentBudget = '1l-2l';
+let capturedImageBlob = null;
+let currentDesignId = null;
+
+/* ── Selectors ─────────────────────────────────────────── */
+function selectStyle(btn) {
+  document.querySelectorAll('.style-select-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentStyle = btn.dataset.style;
+}
+
+function selectRoomType(btn) {
+  document.querySelectorAll('.room-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRoomType = btn.dataset.room;
+}
+
+function selectBudget(btn) {
+  document.querySelectorAll('.budget-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentBudget = btn.dataset.budget;
+}
+
+/* ── Image Upload / Preview ────────────────────────────── */
+function previewImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('preview-img').src = e.target.result;
+    document.getElementById('image-preview').classList.remove('hidden');
+    document.getElementById('upload-zone').classList.add('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearImage() {
+  document.getElementById('room-input').value = '';
+  document.getElementById('image-preview').classList.add('hidden');
+  document.getElementById('upload-zone').classList.remove('hidden');
+  capturedImageBlob = null;
+}
+
+function resetToUpload() {
+  clearImage();
+  document.getElementById('results-error').classList.add('hidden');
+  document.getElementById('results-placeholder').classList.remove('hidden');
+}
+
+/* ── Loading animation steps ───────────────────────────── */
+function showLoading() {
+  document.getElementById('results-placeholder').classList.add('hidden');
+  document.getElementById('results-error').classList.add('hidden');
+  document.getElementById('ai-results').classList.add('hidden');
+  document.getElementById('results-loading').classList.remove('hidden');
+
+  // Animate the steps
+  const steps = ['ls-validate', 'ls-analyze', 'ls-furniture'];
+  steps.forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.className = 'ls-item' + (i === 0 ? ' active' : '');
+    el.textContent = (i === 0 ? '✓ ' : '⏳ ') + el.textContent.replace(/^[✓⏳✕ ]+/, '');
+  });
+  let step = 1;
+  window._loadingInterval = setInterval(() => {
+    if (step < steps.length) {
+      document.getElementById(steps[step - 1]).classList.remove('active');
+      document.getElementById(steps[step - 1]).classList.add('done');
+      document.getElementById(steps[step - 1]).textContent = '✓ ' + document.getElementById(steps[step - 1]).textContent.replace(/^[✓⏳✕ ]+/, '');
+      document.getElementById(steps[step]).classList.add('active');
+      document.getElementById(steps[step]).textContent = '✓ ' + document.getElementById(steps[step]).textContent.replace(/^[✓⏳✕ ]+/, '');
+      step++;
+    }
+  }, 2000);
+}
+
+function hideLoading() {
+  clearInterval(window._loadingInterval);
+  document.getElementById('results-loading').classList.add('hidden');
+}
+
+/* ── Analyze ───────────────────────────────────────────── */
+async function analyzeRoom() {
+  const btn = document.getElementById('analyze-btn');
+  const btnText = btn.querySelector('.btn-analyze-text');
+  const btnIcon = btn.querySelector('.btn-analyze-icon');
+  btnText.textContent = 'Analyzing…';
+  btnIcon.textContent = '⏳';
+  btn.disabled = true;
+  btn.classList.add('analyzing');
+
+  showLoading();
+
+  const fd = new FormData();
+  fd.append('style', currentStyle);
+  fd.append('room_type', currentRoomType);
+  fd.append('budget', currentBudget);
+
+  const fileInput = document.getElementById('room-input');
+  if (fileInput.files[0]) {
+    fd.append('image', fileInput.files[0]);
+  } else if (capturedImageBlob) {
+    fd.append('image', capturedImageBlob, 'capture.jpg');
+  }
+
+  try {
+    const res = await fetch('/api/analyze', { method: 'POST', body: fd });
+    const data = await res.json();
+    hideLoading();
+
+    if (data.success) {
+      currentDesignId = data.design_id;
+      renderResults(data.suggestions);
+    } else if (data.is_room === false) {
+      // Not a room — show error
+      document.getElementById('results-error').classList.remove('hidden');
+      document.getElementById('error-message').textContent =
+        data.message || 'Please upload a proper photo of a room interior.';
+      showToast('⚠️ Not a room image', 'error');
+    } else {
+      showToast('Analysis failed: ' + (data.message || 'Unknown error'), 'error');
+      document.getElementById('results-placeholder').classList.remove('hidden');
+    }
+  } catch (e) {
+    hideLoading();
+    showToast('Network error — please try again', 'error');
+    document.getElementById('results-placeholder').classList.remove('hidden');
+  }
+
+  btnText.textContent = 'Analyze with AI';
+  btnIcon.textContent = '🧠';
+  btn.disabled = false;
+  btn.classList.remove('analyzing');
+}
+
+/* ── Render Results ────────────────────────────────────── */
+function renderResults(s) {
+  document.getElementById('ai-results').classList.remove('hidden');
+
+  // Room info
+  document.getElementById('res-room-type').textContent = s.room_type || currentRoomType;
+  document.getElementById('res-style-tag').textContent = currentStyle + ' Style';
+  document.getElementById('res-total-budget').textContent = s.estimated_budget || '—';
+
+  // Budget tag
+  const budgetLabels = {
+    '25k-50k': '₹25K – ₹50K', '50k-1l': '₹50K – ₹1L',
+    '1l-2l': '₹1L – ₹2L', '2l-5l': '₹2L – ₹5L', '5l+': '₹5L +'
+  };
+  document.getElementById('res-budget-tag').textContent = budgetLabels[currentBudget] || '';
+
+  // Visual suggestion image (Removed)
+
+  // Furniture cards
+  const fl = document.getElementById('furniture-list');
+  const items = s.furniture || [];
+  document.getElementById('furniture-count').textContent = items.length + ' item' + (items.length !== 1 ? 's' : '');
+
+  fl.innerHTML = items.map((f, i) => `
+    <div class="furn-result-card" style="animation-delay: ${i * 0.08}s">
+      <div class="frc-top">
+        <div class="frc-icon">${getCategoryIcon(f.category)}</div>
+        <div class="frc-info">
+          <div class="frc-name">${f.name}</div>
+          <div class="frc-cat">${f.category}</div>
+          <div class="frc-desc">${f.desc || ''}</div>
+        </div>
+        <div class="frc-price">₹${Number(f.price).toLocaleString('en-IN')}</div>
+      </div>
+      <div class="frc-bottom">
+        <span class="frc-style-tag">${f.style || currentStyle}</span>
+        <button class="btn-book-item" onclick="bookItem(this, '${f.name.replace(/'/g, "\\\\'")}', ${f.price}, '${(f.category || '').replace(/'/g, "\\\\'")}', '${(f.style || currentStyle).replace(/'/g, "\\\\'")}', '${(f.desc || '').replace(/'/g, "\\\\'")}')">
+          🛒 Book Now
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  // Total price bar
+  const totalPrice = items.reduce((sum, f) => sum + Number(f.price), 0);
+  document.getElementById('res-total-budget').textContent = '₹' + totalPrice.toLocaleString('en-IN');
+
+  // Colors
+  const cp = document.getElementById('color-palette');
+  cp.innerHTML = (s.colors || []).map(c => `
+    <div class="palette-swatch">
+      <div class="swatch-color" style="background:${c.hex}"></div>
+      <div class="swatch-info">
+        <span class="swatch-name">${c.name}</span>
+        <span class="swatch-role">${c.role}</span>
+      </div>
+    </div>
+  `).join('');
+
+  // Tips
+  const tl = document.getElementById('tips-list');
+  tl.innerHTML = (s.tips || []).map((t, i) => `
+    <div class="tip-card" style="animation-delay: ${i * 0.1}s">
+      <span class="tip-icon">💡</span>
+      <span class="tip-text">${t}</span>
+    </div>
+  `).join('');
+}
+
+function getCategoryIcon(cat) {
+  const icons = {
+    'Seating': '🛋️', 'Tables': '🪑', 'Lighting': '💡',
+    'Storage': '📦', 'Decor': '🎨', 'Bedroom': '🛏️',
+  };
+  return icons[cat] || '🏷️';
+}
+
+/* ── Booking ───────────────────────────────────────────── */
+async function bookItem(btn, name, price, category, style, desc) {
+  const origText = btn.innerHTML;
+  btn.innerHTML = '⏳ Booking...';
+  btn.disabled = true;
+
+  try {
+    const r = await fetch('/api/book', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        furniture_name: name,
+        furniture_price: price,
+        furniture_category: category || 'AI Suggested',
+        furniture_style: style || currentStyle,
+        furniture_desc: desc || '',
+        design_id: currentDesignId
+      })
+    });
+    const d = await r.json();
+    if (d.success) {
+      btn.innerHTML = '✅ Booked!';
+      btn.style.background = 'rgba(16,185,129,0.3)';
+      btn.style.borderColor = '#10b981';
+    } else {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+    }
+    showToast(d.message || d.error || '✅ Booked!', d.success ? 'success' : 'error');
+  } catch (e) {
+    btn.innerHTML = origText;
+    btn.disabled = false;
+    showToast('Network error — please try again', 'error');
+  }
+}
+
+/* ── Drag-and-drop ─────────────────────────────────────── */
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    document.getElementById('room-input').files = e.dataTransfer.files;
+    previewImage(document.getElementById('room-input'));
+  }
+});
+</script>
+{% endblock %}
