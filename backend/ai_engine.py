@@ -193,7 +193,7 @@ def validate_room_image(image_path: str) -> dict:
         'Please upload a clear photo of a room interior."}\n'
     )
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         img = Image.open(image_path)
         response = model.generate_content([prompt, img])
         return _parse_json(response.text)
@@ -233,7 +233,7 @@ def analyze_room(image_path: str | None, style: str,
         f"Include 4 colours and 4 design tips."
     )
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         if image_path and os.path.exists(image_path):
             img = Image.open(image_path)
             response = model.generate_content([prompt, img])
@@ -317,8 +317,8 @@ def buddy_chat(message: str, lang: str, user_id: int, design_id=None) -> dict:
     context_str = "You are Buddy, the expert AI interior design assistant for Gruha Alankara."
     if design_id:
         try:
-            from models import Design
-            design = Design.query.get(design_id)
+            from models import db, Design
+            design = db.session.get(Design, design_id)
             if design:
                 context_str += f"\nContext: User is currently working on a {design.style} style design."
         except Exception:
@@ -355,7 +355,7 @@ def buddy_chat(message: str, lang: str, user_id: int, design_id=None) -> dict:
         "For furniture image_url, provide a relevant placeholder Unsplash image URL (e.g. for a sofa, bed, etc.)."
     )
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         response = model.generate_content(prompt)
         return _parse_json(response.text)
     except Exception as exc:

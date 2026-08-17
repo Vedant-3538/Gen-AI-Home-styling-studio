@@ -24,7 +24,7 @@ ALLOWED = {'png', 'jpg', 'jpeg', 'webp'}
 
 @login_manager.user_loader
 def load_user(uid):
-    return User.query.get(int(uid))
+    return db.session.get(User, int(uid))
 
 def allowed(fn):
     return '.' in fn and fn.rsplit('.', 1)[1].lower() in ALLOWED
@@ -242,7 +242,7 @@ def api_book():
 
     # Try finding by furniture_id first
     if d.get('furniture_id'):
-        item = Furniture.query.get(d.get('furniture_id'))
+        item = db.session.get(Furniture, d.get('furniture_id'))
 
     # If not found, try by name (for AI-suggested items from Design Studio)
     if not item and d.get('furniture_name'):
