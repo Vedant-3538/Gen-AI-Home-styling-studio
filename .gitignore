@@ -6,7 +6,10 @@ scratch/
 *.pyc
 .env
 .venv/
+venv/
+*.db
 node_modules/
 .vscode/
 .idea/
 *.log
+
